@@ -28,37 +28,196 @@
         </ul>
       </header>
       <section>
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <h1>
+<a name="lawkeeper" class="anchor" href="#lawkeeper"><span class="octicon octicon-link"></span></a>Lawkeeper</h1>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>Lawkeeper - Simple authorization policies for Rack apps</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p>Lawkeeper was heavily inspired by the Pundit authorization gem.  Lawkeeper
+follows a very similar pattern, but is more agnostic and geared towards use
+in smaller Rack applications.</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Add this line to your application's Gemfile:</p>
+
+<pre><code>gem 'lawkeeper'
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>And then execute:</p>
+
+<pre><code>$ bundle
+</code></pre>
+
+<p>Or install it yourself as:</p>
+
+<pre><code>$ gem install lawkeeper
+</code></pre>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Lawkeeper makes a couple basic assumptions</p>
+
+<ul>
+<li>You have a <code>current_user</code> helper</li>
+<li>You create policy files like <code>PostPolicy</code> for a <code>Post</code> model</li>
+<li>You have a headers method with a settable hash for response headers</li>
+</ul><p>After setting up your model policies, include <code>Lawkeeper::Helpers</code>
+into your app.  Let's assume Sinatra as our example:</p>
+
+<div class="highlight"><pre><span class="n">helpers</span> <span class="k">do</span>
+  <span class="kp">include</span> <span class="ss">Lawkeeper</span><span class="p">:</span><span class="ss">:Helpers</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>This provides a few useful helpers:</p>
+
+<ul>
+<li>
+<code>can?</code> - for checking if the current_user is permitted an action on the
+record</li>
+<li>
+<code>authorize</code> - checks if the user can perform the action, otherwise raise
+<code>Lawkeeper::NotAuthorized</code>
+</li>
+<li>
+<code>skip_authorization</code> - used to flag an action as not needing authorization</li>
+</ul><h3>
+<a name="declaring-policy-classes" class="anchor" href="#declaring-policy-classes"><span class="octicon octicon-link"></span></a>Declaring policy classes</h3>
+
+<p>By default, Lawkeeper follows a convention of mapping policy classes like
+<code>PostPolicy</code> for a <code>Post</code> class, <code>CommentPolicy</code> for <code>Comment</code>, etc.</p>
+
+<p>The simplest way to declare a post policy is inherit <code>Lawkeeper::Policy</code>
+and declare predicates for policy checks:</p>
+
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">PostPolicy</span> <span class="o">&lt;</span> <span class="ss">Lawkeeper</span><span class="p">:</span><span class="ss">:Policy</span>
+  <span class="k">def</span> <span class="nf">read?</span>
+    <span class="kp">true</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">update?</span>
+    <span class="n">record</span><span class="o">.</span><span class="n">owned_by?</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Lawkeeper makes no assumptions about the name of your policy queries.  You can
+call them <code>show?</code> or <code>read?</code>, <code>delete?</code> or <code>destroy?</code>, whichever you prefer.  The
+only requirement is that they end with '?'.</p>
+
+<p>Policy classes are instantiated with the current user and a record for checking.</p>
+
+<p>If you wish to use an unconventially named Policy class for a model, add the
+<code>#policy_class</code> instance method to your model.  For example:</p>
+
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">Post</span>
+  <span class="k">def</span> <span class="nf">policy_class</span>
+    <span class="no">OwnershipPolicy</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>Lawkeeper helper methods will prefer the <code>#policy_class</code> specified if it exists.</p>
 
 <h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a name="authorizing-in-actions" class="anchor" href="#authorizing-in-actions"><span class="octicon octicon-link"></span></a>Authorizing in actions</h3>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<p>To authorize in a controller action is simple:</p>
+
+<div class="highlight"><pre><span class="n">get</span> <span class="s2">"/post/:id"</span> <span class="k">do</span>
+  <span class="vi">@post</span> <span class="o">=</span> <span class="no">Post</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+  <span class="n">authorize</span> <span class="vi">@post</span><span class="p">,</span> <span class="ss">:read</span>
+  <span class="n">erb</span> <span class="ss">:post_show</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If authorize is permitted (which it usually should be) the action will continue
+as normal.  If it failes, Lawkeeper::NotAuthorized will be raised.</p>
 
 <h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<a name="checking-in-views" class="anchor" href="#checking-in-views"><span class="octicon octicon-link"></span></a>Checking in views</h3>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>Lawkeeper provides a <code>can?</code> helper to use in your views:</p>
+
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sx">% if </span><span class="n">can?</span> <span class="ss">:edit</span><span class="p">,</span> <span class="vi">@post</span> <span class="sx">%&gt;</span>
+<span class="sx">  &lt;a href="/posts/&lt;%= @post.id %&gt;</span><span class="sr">/edit"&gt;Edit Post&lt;/</span><span class="n">a</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="sx">% end </span><span class="o">%&gt;</span>
+</pre></div>
+
+<p>The can method is a check, it will not raise authorization exceptions.</p>
 
 <h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a name="specifying-policy-classes" class="anchor" href="#specifying-policy-classes"><span class="octicon octicon-link"></span></a>Specifying policy classes</h3>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>If you wish to specify a policy class at runtime for a call to <code>can?</code> or <code>authorize</code>,
+you can pass a policy class as an option third argument.</p>
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<div class="highlight"><pre><span class="n">authorize</span> <span class="vi">@post</span><span class="p">,</span> <span class="ss">:read</span><span class="p">,</span> <span class="no">OwnershipPolicy</span>
+</pre></div>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<h2>
+<a name="ensuring-authorization-with-middlewares" class="anchor" href="#ensuring-authorization-with-middlewares"><span class="octicon octicon-link"></span></a>Ensuring authorization with middlewares</h2>
+
+<p>Lawkeeper provides <code>EnsureWare</code> for checking that authorization was performed
+for all actions.  When the <code>authorize</code> or <code>skip_authorization</code> methods are
+employed in actions, response headers are set.  The middleware then checks
+and deletes the headers.  If the header was not present, a 403 forbidden status
+will be returned.</p>
+
+<p>This is useful to ensure you do not forget to authorize the resource in any
+given action.</p>
+
+<p>If you do not wish to enforce such a check, you should employ the <code>ScrubWare</code>
+middleware instead.  This is simply responsible for stripping Lawkeeper headers
+before sending the response on its way.</p>
+
+<p>If you'd prefer to not use middleware at all, it's advised you set Lawkeeper to
+simply skip the setting of headers:</p>
+
+<div class="highlight"><pre><span class="no">Lawkeeper</span><span class="o">.</span><span class="n">skip_set_headers</span> <span class="o">=</span> <span class="kp">true</span>
+</pre></div>
+
+<p>This will not prevent how Lawkeeper does its primary job of authorizing policy
+actions.</p>
+
+<h2>
+<a name="outstanding-problems" class="anchor" href="#outstanding-problems"><span class="octicon octicon-link"></span></a>Outstanding Problems</h2>
+
+<p>Lawkeeper as yet has no mechanism for scoping finds for collection 'index' like
+methods.  Pundit (which Lawkeeper is influenced by) has some similiar problems
+in this area as well (though it does provide a scope object).</p>
+
+<p>The primary challenges are:</p>
+
+<ul>
+<li>A collection action is very different than an instance authorization, because
+you don't authorize instances but rather find them via policy</li>
+<li>As compared to instance authorization, scoped finding is very coupled to an
+ORM, model, or storage pattern in a given application.</li>
+</ul><p>My immediate thinking for Lawkeeper is to call <code>skip_authorization</code> in actions
+where you have performed a scoped find.  This will likely keep development in check
+since adding the call is a mental note for "hey this should be permitted records only"</p>
+
+<p>To build upon this, I believe either:</p>
+
+<ul>
+<li>The scoping should be up to you, or</li>
+<li>The scope permission handling should delegate to third party ORM specific plugins.</li>
+</ul><p>I am still rolling around this in my head, with the goal of keeping it simple</p>
+
+<h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<ol>
+<li>Fork it</li>
+<li>Create your feature branch (<code>git checkout -b my-new-feature</code>)</li>
+<li>Commit your changes (<code>git commit -am 'Added some feature'</code>)</li>
+<li>Push to the branch (<code>git push origin my-new-feature</code>)</li>
+<li>Create new Pull Request</li>
+</ol>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/bemurphy">bemurphy</a></p>
