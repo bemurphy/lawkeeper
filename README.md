@@ -145,6 +145,30 @@ Lawkeeper.skip_set_headers = true
 This will not prevent how Lawkeeper does its primary job of authorizing policy
 actions.
 
+## Outstanding Problems
+
+Lawkeeper as yet has no mechanism for scoping finds for collection 'index' like
+methods.  Pundit (which Lawkeeper is influenced by) has some similiar problems
+in this area as well (though it does provide a scope object).
+
+The primary challenges are:
+
+* A collection action is very different than an instance authorization, because
+  you don't authorize instances but rather find them via policy
+* As compared to instance authorization, scoped finding is very coupled to an
+  ORM, model, or storage pattern in a given application.
+
+My immediate thinking for Lawkeeper is to call `skip_authorization` in actions
+where you have performed a scoped find.  This will likely keep development in check
+since adding the call is a mental note for "hey this should be permitted records only"
+
+To build upon this, I believe either:
+
+* The scoping should be up to you, or
+* The scope permission handling should delegate to third party ORM specific plugins.
+
+I am still rolling around this in my head, with the goal of keeping it simple
+
 ## Contributing
 
 1. Fork it
