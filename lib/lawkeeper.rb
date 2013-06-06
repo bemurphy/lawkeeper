@@ -39,14 +39,18 @@ module Lawkeeper
 
     def authorize(model, action, policy_class = nil)
       if can?(action, model, policy_class)
-        headers[AUTHORIZED_HEADER] = 'true'
+        set_lawkeeper_header(AUTHORIZED_HEADER)
       else
         raise NotAuthorized
       end
     end
 
     def skip_authorization
-      headers[SKIPPED_HEADER] = 'true'
+      set_lawkeeper_header(SKIPPED_HEADER)
+    end
+
+    def set_lawkeeper_header(header)
+      headers[header] = 'true'
     end
   end
 
