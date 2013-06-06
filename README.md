@@ -45,11 +45,80 @@ This provides a few useful helpers:
   `Lawkeeper::NotAuthorized`
 * `skip_authorization` - used to flag an action as not needing authorization
 
-TODO: write action and view usage examples
+### Declaring policy classes
 
-## Declaring policy classes
+By default, Lawkeeper follows a convention of mapping policy classes like
+`PostPolicy` for a `Post` class, `CommentPolicy` for `Comment`, etc.
 
-TODO
+The simplest way to declare a post policy is inherit `Lawkeeper::Policy`
+and declare predicates for policy checks:
+
+```ruby
+class PostPolicy < Lawkeeper::Policy
+  def read?
+    true
+  end
+
+  def update?
+    record.owned_by?(user)
+  end
+end
+```
+
+Lawkeeper makes no assumptions about the name of your policy queries.  You can
+call them `show?` or `read?`, `delete?` or `destroy?`, whichever you prefer.  The
+only requirement is that they end with '?'.
+
+Policy classes are instantiated with the current user and a record for checking.
+
+If you wish to use an unconventially named Policy class for a model, add the
+`#policy_class` instance method to your model.  For example:
+
+```ruby
+class Post
+  def policy_class
+    OwnershipPolicy
+  end
+end
+```
+
+Lawkeeper helper methods will prefer the `#policy_class` specified if it exists.
+
+### Authorizing in actions
+
+To authorize in a controller action is simple:
+
+```ruby
+get "/post/:id" do
+  @post = Post.find(id)
+  authorize @post, :read
+  erb :post_show
+end
+```
+
+If authorize is permitted (which it usually should be) the action will continue
+as normal.  If it failes, Lawkeeper::NotAuthorized will be raised.
+
+### Checking in views
+
+Lawkeeper provides a `can?` helper to use in your views:
+
+```ruby
+<% if can? :edit, @post %>
+  <a href="/posts/<%= @post.id %>/edit">Edit Post</a>
+<% end %>
+```
+
+The can method is a check, it will not raise authorization exceptions.
+
+### Specifying policy classes
+
+If you wish to specify a policy class at runtime for a call to `can?` or `authorize`,
+you can pass a policy class as an option third argument.
+
+```ruby
+authorize @post, :read, OwnershipPolicy
+```
 
 ## Ensuring authorization with middlewares
 
