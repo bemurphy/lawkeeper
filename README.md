@@ -45,6 +45,8 @@ This provides a few useful helpers:
   `Lawkeeper::NotAuthorized`
 * `skip_authorization` - used to flag an action as not needing authorization
 
+TODO: write action and view usage examples
+
 ## Ensuring authorization with middlewares
 
 Lawkeeper provides `EnsureWare` for checking that authorization was performed
