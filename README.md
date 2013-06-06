@@ -47,6 +47,10 @@ This provides a few useful helpers:
 
 TODO: write action and view usage examples
 
+## Declaring policy classes
+
+TODO
+
 ## Ensuring authorization with middlewares
 
 Lawkeeper provides `EnsureWare` for checking that authorization was performed
