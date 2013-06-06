@@ -67,6 +67,16 @@ describe Lawkeeper::Helpers do
       controller.headers['Lawkeeper-Authorized'].must_equal 'true'
     end
 
+    it "skips setting the header if Lawkeeper.skip_set_headers is true" do
+      Lawkeeper.skip_set_headers = true
+
+      permit_action
+      controller.authorize(comment, :read)
+      controller.headers['Lawkeeper-Authorized'].must_be_nil 'true'
+
+      Lawkeeper.skip_set_headers = nil
+    end
+
     it "raises NotAuthorized if the user is not permitted the action" do
       lambda {
         controller.authorize(comment, :read)

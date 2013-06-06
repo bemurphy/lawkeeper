@@ -66,6 +66,16 @@ If you do not wish to enforce such a check, you should employ the `ScrubWare`
 middleware instead.  This is simply responsible for stripping Lawkeeper headers
 before sending the response on its way.
 
+If you'd prefer to not use middleware at all, it's advised you set Lawkeeper to
+simply skip the setting of headers:
+
+```ruby
+Lawkeeper.skip_set_headers = true
+```
+
+This will not prevent how Lawkeeper does its primary job of authorizing policy
+actions.
+
 ## Contributing
 
 1. Fork it

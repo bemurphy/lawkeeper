@@ -7,6 +7,10 @@ module Lawkeeper
   class NotAuthorized < StandardError; end
   class NotDefined < StandardError; end
 
+  class << self
+    attr_accessor :skip_set_headers
+  end
+
   class Policy
     attr_reader :user, :record
 
@@ -50,7 +54,7 @@ module Lawkeeper
     end
 
     def set_lawkeeper_header(header)
-      headers[header] = 'true'
+      headers[header] = 'true' unless Lawkeeper.skip_set_headers
     end
   end
 
