@@ -26,6 +26,7 @@ Lawkeeper makes a couple basic assumptions
 
 1) You have a `current_user` helper
 2) You create policy files like `PostPolicy` for a `Post` model
+3) You have a headers method with a settable hash for response headers
 
 After setting up your model policies, include `Lawkeeper::Helpers`
 into your app.  Let's assume Sinatra as our example:
