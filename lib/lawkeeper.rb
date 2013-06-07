@@ -91,10 +91,6 @@ module Lawkeeper
     end
 
     def call(env)
-      dup._call(env)
-    end
-
-    def _call(env)
       status, headers, body = @app.call(env)
 
       if headers.delete(AUTHORIZED_HEADER) || headers.delete(SKIPPED_HEADER)
@@ -115,10 +111,6 @@ module Lawkeeper
     end
 
     def call(env)
-      dup._call(env)
-    end
-
-    def _call(env)
       status, headers, body = @app.call(env)
       headers.delete(AUTHORIZED_HEADER)
       headers.delete(SKIPPED_HEADER)
