@@ -2,9 +2,9 @@
 
 Lawkeeper - Simple authorization policies for Rack apps
 
-Lawkeeper was heavily inspired by the Pundit authorization gem.  Lawkeeper
-follows a very similar pattern, but is more agnostic and geared towards use
-in smaller Rack applications.
+Lawkeeper was heavily inspired by the [Pundit](https://github.com/elabs/pundit)
+authorization gem.  Lawkeeper follows a very similar pattern, but is more
+agnostic and geared towards use in smaller Rack applications.
 
 ## Installation
 
