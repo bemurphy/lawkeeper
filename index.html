@@ -111,16 +111,51 @@ only requirement is that they end with '?'.</p>
 <p>Policy classes are instantiated with the current user and a record for checking.</p>
 
 <p>If you wish to use an unconventially named Policy class for a model, add the
-<code>#policy_class</code> instance method to your model.  For example:</p>
+<code>.policy_class</code> class method to your model.  For example:</p>
 
 <div class="highlight"><pre><span class="k">class</span> <span class="nc">Post</span>
-  <span class="k">def</span> <span class="nf">policy_class</span>
+  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">policy_class</span>
     <span class="no">OwnershipPolicy</span>
   <span class="k">end</span>
 <span class="k">end</span>
 </pre></div>
 
-<p>Lawkeeper helper methods will prefer the <code>#policy_class</code> specified if it exists.</p>
+<p>Lawkeeper helper methods will prefer the <code>policy_class</code> specified if it exists.</p>
+
+<h3>
+<a name="specifying-scope-classes-for-policy-use" class="anchor" href="#specifying-scope-classes-for-policy-use"><span class="octicon octicon-link"></span></a>Specifying Scope classes for policy use</h3>
+
+<p>For finding records for collection records (like an index) it is possible to
+do scoped find if your relational or document mapper permits it.  This is
+accomplished by creating a <code>Scope</code> class inside your policy class.  Take
+this example for Ohm:</p>
+
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">PostPolicy</span> <span class="o">&lt;</span> <span class="no">AppPolicy</span>
+  <span class="k">class</span> <span class="nc">Scope</span> <span class="o">&lt;</span> <span class="ss">Lawkeeper</span><span class="p">:</span><span class="ss">:Policy</span><span class="o">::</span><span class="no">Scope</span>
+    <span class="k">def</span> <span class="nf">resolve</span>
+      <span class="n">scope</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="ss">published</span><span class="p">:</span> <span class="s2">"true"</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You can proceed to use this in an action to find posts where published is the
+string "true":</p>
+
+<div class="highlight"><pre><span class="vi">@posts</span> <span class="o">=</span> <span class="n">policy_scope</span><span class="p">(</span><span class="no">Post</span><span class="p">)</span>
+</pre></div>
+
+<p>The policy scope lookup is handled by a scope finder stored at <code>Lawkeeper.scope_finder</code>.
+Currently Ohm and ActiveRecord adapters are provided.  The finder only has one requirement,
+it must respond to <code>call</code>.  You can use a class method or Proc to facilitate this.  It
+should return a capitalized string representing the class, such as "Post" or "Comment".</p>
+
+<p>If you wish to use <code>policy_scope</code> you should configure a finder appropriate for your storage:</p>
+
+<div class="highlight"><pre><span class="no">Lawkeeper</span><span class="o">.</span><span class="n">scope_finder</span> <span class="o">=</span> <span class="ss">Lawkeeper</span><span class="p">:</span><span class="ss">:ScopeFinders</span><span class="o">::</span><span class="no">Ohm</span>
+<span class="c1"># or</span>
+<span class="no">Lawkeeper</span><span class="o">.</span><span class="n">scope_finder</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span> <span class="p">}</span>
+</pre></div>
 
 <h3>
 <a name="authorizing-in-actions" class="anchor" href="#authorizing-in-actions"><span class="octicon octicon-link"></span></a>Authorizing in actions</h3>
@@ -182,31 +217,6 @@ simply skip the setting of headers:</p>
 
 <p>This will not prevent how Lawkeeper does its primary job of authorizing policy
 actions.</p>
-
-<h2>
-<a name="outstanding-problems" class="anchor" href="#outstanding-problems"><span class="octicon octicon-link"></span></a>Outstanding Problems</h2>
-
-<p>Lawkeeper as yet has no mechanism for scoping finds for collection 'index' like
-methods.  Pundit (which Lawkeeper is influenced by) has some similiar problems
-in this area as well (though it does provide a scope object).</p>
-
-<p>The primary challenges are:</p>
-
-<ul>
-<li>A collection action is very different than an instance authorization, because
-you don't authorize instances but rather find them via policy</li>
-<li>As compared to instance authorization, scoped finding is very coupled to an
-ORM, model, or storage pattern in a given application.</li>
-</ul><p>My immediate thinking for Lawkeeper is to call <code>skip_authorization</code> in actions
-where you have performed a scoped find.  This will likely keep development in check
-since adding the call is a mental note for "hey this should be permitted records only"</p>
-
-<p>To build upon this, I believe either:</p>
-
-<ul>
-<li>The scoping should be up to you, or</li>
-<li>The scope permission handling should delegate to third party ORM specific plugins.</li>
-</ul><p>I am still rolling around this in my head, with the goal of keeping it simple</p>
 
 <h2>
 <a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
