@@ -72,17 +72,17 @@ only requirement is that they end with '?'.
 Policy classes are instantiated with the current user and a record for checking.
 
 If you wish to use an unconventially named Policy class for a model, add the
-`#policy_class` instance method to your model.  For example:
+`.policy_class` class method to your model.  For example:
 
 ```ruby
 class Post
-  def policy_class
+  def self.policy_class
     OwnershipPolicy
   end
 end
 ```
 
-Lawkeeper helper methods will prefer the `#policy_class` specified if it exists.
+Lawkeeper helper methods will prefer the `policy_class` specified if it exists.
 
 ### Authorizing in actions
 

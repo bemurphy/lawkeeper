@@ -72,7 +72,7 @@ describe Lawkeeper::Helpers do
 
       permit_action
       controller.authorize(comment, :read)
-      controller.headers['Lawkeeper-Authorized'].must_be_nil 'true'
+      controller.headers['Lawkeeper-Authorized'].must_be_nil
 
       Lawkeeper.skip_set_headers = nil
     end
@@ -90,6 +90,40 @@ describe Lawkeeper::Helpers do
         end
       end
       controller.authorize(comment, :read, klass)
+    end
+  end
+
+  describe '#policy_scope' do
+    before do
+      Foo ||= Class.new
+
+      class FooPolicy
+        class Scope
+          def initialize(*)
+          end
+
+          def resolve
+            [:foo, :bar]
+          end
+        end
+      end
+
+      @klass = Class.new do
+        def self.policy_class
+          FooPolicy
+        end
+      end
+
+      Lawkeeper.scope_finder = Proc.new { "Foo" }
+    end
+
+    it "sets the authorized header to 'true'" do
+      controller.policy_scope(@klass)
+      controller.headers['Lawkeeper-Authorized'].must_equal 'true'
+    end
+
+    it "resolves using the found scope class" do
+      controller.policy_scope(@klass).must_equal [:foo, :bar]
     end
   end
 
