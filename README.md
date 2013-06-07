@@ -72,17 +72,54 @@ only requirement is that they end with '?'.
 Policy classes are instantiated with the current user and a record for checking.
 
 If you wish to use an unconventially named Policy class for a model, add the
-`#policy_class` instance method to your model.  For example:
+`.policy_class` class method to your model.  For example:
 
 ```ruby
 class Post
-  def policy_class
+  def self.policy_class
     OwnershipPolicy
   end
 end
 ```
 
-Lawkeeper helper methods will prefer the `#policy_class` specified if it exists.
+Lawkeeper helper methods will prefer the `policy_class` specified if it exists.
+
+### Specifying Scope classes for policy use
+
+For finding records for collection records (like an index) it is possible to
+do scoped find if your relational or document mapper permits it.  This is
+accomplished by creating a `Scope` class inside your policy class.  Take
+this example for Ohm:
+
+```ruby
+class PostPolicy < AppPolicy
+  class Scope < Lawkeeper::Policy::Scope
+    def resolve
+      scope.find(published: "true")
+    end
+  end
+end
+```
+
+You can proceed to use this in an action to find posts where published is the
+string "true":
+
+```ruby
+@posts = policy_scope(Post)
+```
+
+The policy scope lookup is handled by a scope finder stored at `Lawkeeper.scope_finder`.
+Currently Ohm and ActiveRecord adapters are provided.  The finder only has one requirement,
+it must respond to `call`.  You can use a class method or Proc to facilitate this.  It
+should return a capitalized string representing the class, such as "Post" or "Comment".
+
+If you wish to use `policy_scope` you should configure a finder appropriate for your storage:
+
+```ruby
+Lawkeeper.scope_finder = Lawkeeper::ScopeFinders::Ohm
+# or
+Lawkeeper.scope_finder = Proc.new { |s| ... }
+```
 
 ### Authorizing in actions
 
@@ -144,30 +181,6 @@ Lawkeeper.skip_set_headers = true
 
 This will not prevent how Lawkeeper does its primary job of authorizing policy
 actions.
-
-## Outstanding Problems
-
-Lawkeeper as yet has no mechanism for scoping finds for collection 'index' like
-methods.  Pundit (which Lawkeeper is influenced by) has some similiar problems
-in this area as well (though it does provide a scope object).
-
-The primary challenges are:
-
-* A collection action is very different than an instance authorization, because
-  you don't authorize instances but rather find them via policy
-* As compared to instance authorization, scoped finding is very coupled to an
-  ORM, model, or storage pattern in a given application.
-
-My immediate thinking for Lawkeeper is to call `skip_authorization` in actions
-where you have performed a scoped find.  This will likely keep development in check
-since adding the call is a mental note for "hey this should be permitted records only"
-
-To build upon this, I believe either:
-
-* The scoping should be up to you, or
-* The scope permission handling should delegate to third party ORM specific plugins.
-
-I am still rolling around this in my head, with the goal of keeping it simple
 
 ## Contributing
 

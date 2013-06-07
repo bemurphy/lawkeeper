@@ -8,11 +8,24 @@ module Lawkeeper
   class NotDefined < StandardError; end
 
   class << self
-    attr_accessor :skip_set_headers
+    attr_accessor :skip_set_headers, :scope_finder
   end
 
   class Policy
     attr_reader :user, :record
+
+    class Scope
+      attr_reader :user, :scope
+
+      def initialize(user, scope)
+        @user  = user
+        @scope = scope
+      end
+
+      def resolve
+        scope
+      end
+    end
 
     def initialize(user, record)
       @user   = user
@@ -22,15 +35,22 @@ module Lawkeeper
 
   class PolicyLookup
     def self.[](model)
-      if model.respond_to?(:policy_class)
-        model.policy_class
+      klass = model.is_a?(Class) ? model : model.class
+
+      if klass.respond_to?(:policy_class)
+        klass.policy_class
       else
         begin
-          Object.const_get("#{model.class}Policy")
+          Object.const_get("#{klass}Policy")
         rescue NameError
           raise NotDefined
         end
       end
+    end
+
+    def self.for_scope(scope)
+      model_name = Lawkeeper.scope_finder.call(scope)
+      self[Object.const_get(model_name)]
     end
   end
 
@@ -47,6 +67,12 @@ module Lawkeeper
       else
         raise NotAuthorized
       end
+    end
+
+    def policy_scope(scope)
+      set_lawkeeper_header(AUTHORIZED_HEADER)
+      klass = Lawkeeper::PolicyLookup.for_scope(scope)::Scope
+      klass.new(current_user, scope).resolve
     end
 
     def skip_authorization
