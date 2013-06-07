@@ -97,7 +97,7 @@ end
 ```
 
 If authorize is permitted (which it usually should be) the action will continue
-as normal.  If it failes, Lawkeeper::NotAuthorized will be raised.
+as normal.  If it fails, Lawkeeper::NotAuthorized will be raised.
 
 ### Checking in views
 
@@ -109,7 +109,7 @@ Lawkeeper provides a `can?` helper to use in your views:
 <% end %>
 ```
 
-The can method is a check, it will not raise authorization exceptions.
+The `can?` method is a check, it will not raise authorization exceptions.
 
 ### Specifying policy classes
 
