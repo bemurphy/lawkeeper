@@ -1,4 +1,4 @@
-# Lawkeeper
+# Lawkeeper [![Code Climate](https://codeclimate.com/github/bemurphy/lawkeeper.png)](https://codeclimate.com/github/bemurphy/lawkeeper)
 
 Lawkeeper - Simple authorization policies for Rack apps
 
